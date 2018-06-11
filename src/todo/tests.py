@@ -67,8 +67,30 @@ class TestDeleteTodoItem(APITestCase):
     """
     Ensure we can delete an item
     """
+    def setUp(self):
+        response = createItem(self.client)
+        self.assertEqual(TodoItem.objects.count(), 1)
+        url = response['Location']
+        self.response = self.client.delete(url)
+
+    def test_received_204_no_content_status_code(self):
+        self.assertEqual(self.response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_the_item_was_deleted(self):
+        self.assertEqual(TodoItem.objects.count(), 0)
 
 class TestDeleteAllTodoItems(APITestCase):
     """
     Ensure we can delete all items
     """
+    def setUp(self):
+        createItem(self.client)
+        createItem(self.client)
+        self.assertEqual(TodoItem.objects.count(), 2)
+        self.response = self.client.delete(reverse('todoitem-list'))
+
+    def test_received_204_no_content_status_code(self):
+        self.assertEqual(self.response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_all_items_were_deleted(self):
+        self.assertEqual(TodoItem.objects.count(), 0)
