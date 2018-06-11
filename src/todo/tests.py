@@ -33,11 +33,35 @@ class TestUpdateTodoItem(APITestCase):
     """
     Ensure we can update an item
     """
+    def setUp(self):
+        response = createItem(self.client)
+        self.assertEqual(TodoItem.objects.get().completed, False)
+        url = response['Location']
+        data = {'title': 'Cook for dinner', 'completed': True}
+        self.response = self.client.put(url, data, format='json')
+
+    def test_received_200_status_code_for_created_item(self):
+        self.assertEqual(self.response.status_code, status.HTTP_200_OK)
+
+    def test_item_was_updated(self):
+        self.assertEqual(TodoItem.objects.get().completed, True)
 
 class TestPatchTodoItem(APITestCase):
     """
     Ensure we can update an item using HTTP PATCH
     """
+    def setUp(self):
+        response = createItem(self.client)
+        self.assertEqual(TodoItem.objects.get().completed, False)
+        url = response['Location']
+        data = {'title': 'Cook for dinner', 'completed': True}
+        self.response = self.client.patch(url, data, format='json')
+
+    def test_received_200_status_code_for_created_item(self):
+        self.assertEqual(self.response.status_code, status.HTTP_200_OK)
+
+    def test_item_was_updated_using_patch(self):
+        self.assertEqual(TodoItem.objects.get().completed, True)
 
 class TestDeleteTodoItem(APITestCase):
     """
