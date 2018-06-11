@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from models import TodoItem
+from .models import TodoItem
 
 class TodoItemSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.ReadOnlyField()
