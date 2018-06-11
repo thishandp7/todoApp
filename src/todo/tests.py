@@ -1,3 +1,50 @@
 from django.test import TestCase
-
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
+from todo.models import TodoItem
 # Create your tests here.
+def createItem(client):
+    url = reverse('todoitem-list')
+    data = {'title': 'Cook for dinner'}
+    return client.post(url, data, format='json')
+
+class TestCreateTodoItem(APITestCase):
+    """
+    Ensure we can create a new item
+    """
+    def setUp(self):
+        self.response = createItem(self.client)
+
+    def test_received_201_status_code_for_created_item(self):
+        self.assertEqual(self.response.status_code, status.HTTP_201_CREATED)
+
+    def test_received_location_header_hyperlink(self):
+        self.assertRegexpMatches(self.response['Location'], '^http://.+/todos/[\d]+$')
+
+    def test_item_was_created(self):
+        self.assertEqual(TodoItem.objects.count(), 1)
+
+    def test_item_has_correct_title(self):
+        self.assertEqual(TodoItem.objects.get().title, 'Cook for dinner')
+
+
+class TestUpdateTodoItem(APITestCase):
+    """
+    Ensure we can update an item
+    """
+
+class TestPatchTodoItem(APITestCase):
+    """
+    Ensure we can update an item using HTTP PATCH
+    """
+
+class TestDeleteTodoItem(APITestCase):
+    """
+    Ensure we can delete an item
+    """
+
+class TestDeleteAllTodoItems(APITestCase):
+    """
+    Ensure we can delete all items
+    """
