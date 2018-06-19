@@ -1,0 +1,35 @@
+version: "3.5"
+
+services:
+  dev:
+    build:
+      context: ../../
+      dockerfile: docker/dev/Dockerfile
+    volumes:
+      - cache:/cache
+    depends_on:
+      - db
+    networks:
+      - backend-net
+    environment:
+      DJANGO_SETTINGS_MODULE: todobackend.settings.test
+      MYSQL_HOST: db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: password
+      TEST_OUTPUT_DIR: /report
+
+  db:
+    image: mysql:5.6
+    hostname: db
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    networks:
+      - backend-net
+
+networks:
+  backend-net:
+    driver: bridge
+
+volumes:
+  cache:
+    external: true
