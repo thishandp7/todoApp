@@ -13,7 +13,11 @@ ENV WHEELHOUSE=/wheelhouse PIP_WHEELDIR=/wheelhouse PIP_FIND_LINKS=/wheelhouse X
 
 #Volumes for build artifacts and test reports
 VOLUME /wheelhouse
-VOLUME /report
+
+#volume for build cache
+VOLUME /build
+
+VOLUME /reports
 
 COPY scripts/test.sh /usr/local/bin/test.sh
 RUN chmod +x /usr/local/bin/test.sh
