@@ -1,9 +1,9 @@
-import setup, find_packages from setuptools
+from setuptools import setup, find_packages
 
 setup(
     name                    = "todobackend",
     version                 = "0.1.0",
-    description             = "Todobackend Django REST services"
+    description             = "Todobackend Django REST services",
     packages                = find_packages(),
     include_package_data    = True,
     scripts                 = ["manage.py"],
@@ -12,9 +12,10 @@ setup(
                                 "django-cors-headers>=2.2.0",
                                 "djangorestframework>=3.8.2",
                                 "mysqlclient>=1.3.10",
-                                "PyMySQL>=0.8.1"
+                                "PyMySQL>=0.8.1",
+                                "uWSGI>=2.0.17",
                                 ],
-    extras_requires         = {
+    extras_require        = {
                                 "test":[
                                     "colorama>=0.3.9",
                                     "coverage>=4.5.1",
