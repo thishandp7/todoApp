@@ -33,6 +33,8 @@ services:
       - webroot:/var/www/todobackend
     ports:
       - "8000:8000"
+    networks:
+      - frontend-net
 
   db:
     image: mysql:5.6
@@ -58,8 +60,22 @@ services:
       PROBE_HOST: "db"
       PROBE_PORT: "3306"
 
+  test:
+    image: tdp7/todoapp-specs
+    depends_on:
+      - nginx
+    networks:
+      - frontend-net
+    environment:
+      URL: http://nginx:8000/todos
+      JUNIT_REPORT_PATH: /reports/acceptance.xml
+      JUNIT_REPORT_STACK: 1
+    command: --reporter mocha-jenkins-reporter
+
 networks:
   backend-net:
+    driver: bridge
+  frontend-net:
     driver: bridge
 
 volumes:
