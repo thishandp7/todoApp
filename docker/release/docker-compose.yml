@@ -60,7 +60,7 @@ services:
       PROBE_HOST: "db"
       PROBE_PORT: "3306"
 
-  test:
+  tests:
     image: tdp7/todoapp-specs
     depends_on:
       - nginx
