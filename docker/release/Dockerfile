@@ -1,4 +1,4 @@
-FROM todobackend-base-tdp7:latest
+FROM thishandp7/todobackend-base:latest
 MAINTAINER Thishan D Pathmanathan <thishandp7@gmail.com>
 
 COPY target /wheelhouse

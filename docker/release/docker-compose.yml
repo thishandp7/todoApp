@@ -49,7 +49,7 @@ services:
       MYSQL_ROOT_PASSWORD: password
 
   agent:
-    image: tdp7/ansible
+    image: thishandp7/todobackend-ansible:latest
     volumes:
       - ../../ansible/prob.yml:/ansible/site.yml
     depends_on:
@@ -61,7 +61,7 @@ services:
       PROBE_PORT: "3306"
 
   tests:
-    image: tdp7/todoapp-specs
+    image: thishandp7/todoapp_specs:latest
     depends_on:
       - nginx
     networks:

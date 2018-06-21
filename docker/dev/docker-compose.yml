@@ -20,7 +20,7 @@ services:
       TEST_OUTPUT_DIR: /reports
 
   agent:
-    image: tdp7/ansible
+    image: thishandp7/todobackend-ansible:latest
     volumes:
       - ../../ansible/prob.yml:/ansible/site.yml
     depends_on:
