@@ -1,4 +1,4 @@
-FROM todobackend-base:latest
+FROM todobackend-base-tdp7:latest
 MAINTAINER Thishan D Pathmanathan <thishandp7@gmail.com>
 
 RUN apt-get update && \
@@ -9,7 +9,7 @@ RUN . /appenv/bin/activate && \
     pip3 install wheel --upgrade
 
 #pip environment variables(Must be set after installing wheel)
-ENV WHEELHOUSE=/wheelhouse PIP_WHEELDIR=/wheelhouse PIP_FIND_LINKS=/wheelhouse XDG_CACHE_HOME=/cache
+ENV WHEELHOUSE=/wheelhouse PIP_WHEEL_DIR=/wheelhouse PIP_FIND_LINKS=/wheelhouse XDG_CACHE_HOME=/cache
 
 #Volumes for build artifacts and test reports
 VOLUME /wheelhouse

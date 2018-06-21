@@ -4,9 +4,11 @@ services:
   app:
     build:
       context: ../../
-      dockerfile: docker/dev/Dockerfile
+      dockerfile: docker/release/Dockerfile
     depends_on:
       - db
+    networks:
+      - backend-net
     volumes:
       - webroot:/var/www/todobackend
     environment:
@@ -24,16 +26,20 @@ services:
 
   nginx:
     image: nginx
+    depends_on:
+      - app
     volumes:
       - ./todobackend.conf:/etc/nginx/conf.d/todobackend.conf
       - webroot:/var/www/todobackend
     ports:
-      - 8000:8000
+      - "8000:8000"
 
   db:
     image: mysql:5.6
     ports:
-      - 3306
+      - "3306"
+    networks:
+      - backend-net
     environment:
       MYSQL_DATABASE: todobackend
       MYSQL_USER: todo
