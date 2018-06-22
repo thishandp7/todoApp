@@ -14,16 +14,18 @@ REL_PROJECT := $(PROJECT_NAME)dev
 INSPECT := $$(docker-compose -p $$1 -f $$2 ps -q $$3 | xargs -I ARGS docker inspect -f "{{ .State.ExitCode }}" ARGS)
 
 CHECK := @bash -c '\
-  if [[ $(INSPECT) -ne 0 ]];
-	then exit(INSPECT); fi' VALUE
+  if [[ $(INSPECT) -ne 0 ]]; \
+	then exit $(INSPECT); fi' VALUE
 
 .PHONY: test build release clean deep-clean hello
 
 test:
 	${INFO} "Creating cache volume..."
 	@ docker volume create --name=cache
+	${INFO} "Pulling the latest images..."
+	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) pull
 	${INFO} "Building dev images..."
-	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) build --no-cache
+	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) build --pull tests
 	${INFO} "Ensuring database is ready..."
 	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) run --rm agent
 	${INFO} "Running tests..."
@@ -34,6 +36,8 @@ test:
 	${INFO} "Tests complete"
 
 build:
+	${INFO} "Creating the builder image..."
+	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) build builder
 	${INFO} "Building application artifacts..."
 	@ docker-compose -p $(DEV_PROJECT) -f $(DEV_COMPOSE_FILE) up builder
 	${CHECK} $(DEV_PROJECT) $(DEV_COMPOSE_FILE) builder
@@ -42,8 +46,11 @@ build:
 	${INFO} "Build complete"
 
 release:
+	${INFO} "Pulling the latest images..."
+	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) pull tests
 	${INFO} "Builing release images..."
-	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) build --no-cache
+	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) build app
+	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) build --pull nginx
 	${INFO} "Ensuring database is ready..."
 	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) run --rm agent
 	${INFO} "Collecting static files..."
@@ -51,7 +58,7 @@ release:
 	${INFO} "Running database migrations..."
 	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) run --rm app manage.py migrate --noinput
 	${INFO} "Running acceptance tests..."
-	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) up release
+	@ docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) up tests
 	${INFO} "Collecting acceptance test reports..."
 	@ docker cp $$(docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) ps -q tests):/reports/. reports
 	${CHECK} $(DEV_PROJECT) $(DEV_COMPOSE_FILE) tests
