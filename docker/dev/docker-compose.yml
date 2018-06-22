@@ -1,7 +1,7 @@
 version: "3.5"
 
 services:
-  dev:
+  tests:
     build:
       context: ../../
       dockerfile: docker/dev/Dockerfile
@@ -21,8 +21,6 @@ services:
 
   agent:
     image: thishandp7/todobackend-ansible:latest
-    volumes:
-      - ../../ansible/prob.yml:/ansible/site.yml
     depends_on:
       - db
     networks:
@@ -30,6 +28,7 @@ services:
     environment:
       PROBE_HOST: "db"
       PROBE_PORT: "3306"
+    command: ["prob.yml"]
 
   db:
     image: mysql:5.6
@@ -46,7 +45,6 @@ services:
       context: ../../
       dockerfile: docker/dev/Dockerfile
     volumes:
-      - ../../target:/wheelhouse
       - build:/build
     entrypoint: "entrypoint.sh"
     command: ["pip3", "wheel", "--no-index", "-f /build", "."]

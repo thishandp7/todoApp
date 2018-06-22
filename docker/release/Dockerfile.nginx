@@ -1,0 +1,4 @@
+FROM nginx
+MAINTAINER Thishan D Pathmanathan <thishandp7@gmail.com>
+
+COPY todobackend.conf /etc/nginx/conf.d/todobackend.conf
