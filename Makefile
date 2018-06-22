@@ -1,7 +1,7 @@
 #project variables
 PROJECT_NAME ?= todobackend
 ORG_NAME ?= thishandp7
-REPO_NAME ?= todoApp
+REPO_NAME ?= todoapp
 
 #file names with path
 DEV_COMPOSE_FILE := docker/dev/docker-compose.yml
@@ -11,13 +11,29 @@ REL_COMPOSE_FILE := docker/release/docker-compose.yml
 DEV_PROJECT := $(PROJECT_NAME)$(BUILD_ID)
 REL_PROJECT := $(PROJECT_NAME)dev
 
+BUILD_TAG_EXPRESSION ?= data -u +%y%m%d%H%M%S
+
+BUILD_EXPRESSION := $(shell $(BUILD_TAG_EXPRESSION))
+
+BUILD_TAG ?= $(BUILD_EXPRESSION)
+
+APP_SERVICE_NAME := app
+
+APP_CONTAINER_ID := $$(docker-compose -p $(REL_PROJECT) -f $(REL_COMPOSE_FILE) ps -q $(APP_SERVICE_NAME))
+
+IMAGE_ID := $$(docker inspect -f '{{ .Image }}' $(APP_CONTAINER_ID))
+
 INSPECT := $$(docker-compose -p $$1 -f $$2 ps -q $$3 | xargs -I ARGS docker inspect -f "{{ .State.ExitCode }}" ARGS)
 
 CHECK := @bash -c '\
   if [[ $(INSPECT) -ne 0 ]]; \
 	then exit $(INSPECT); fi' VALUE
 
-.PHONY: test build release clean deep-clean hello
+DOCKER_REGISTRY := docker.io
+
+DOCKER_REGISTRY_AUTH ?=
+
+.PHONY: test build release clean deep-clean tag buildtag login logout publish
 
 test:
 	${INFO} "Creating cache volume..."
@@ -75,6 +91,32 @@ clean:
 	@ docker images -q -f dangling=true label=application$(REPO_NAME) | xargs -I ARGS docker rmi ARGS
 	${INFO} "Clean up complete"
 
+tag:
+	${INFO} "Tagging release image with tags $(TAG_ARGS)..."
+	@ $(foreach tag, $(TAG_ARGS), docker tag $(IMAGE_ID) $(DOCKER_REGISTRY)/$(ORG_NAME)/$(REPO_NAME):$(tag);)
+	${INFO} "Tagging complete"
+
+buildtag:
+	${INFO} "Tagging release image with suffix $(BUILD_TAG) and build tags $(BUILDTAG_ARGS)..."
+	@ $(foreach tag, $(BUILDTAG_ARGS), docker tag $(IMAGE_ID) $(DOCKER_REGISTRY)/$(ORG_NAME)/$(REPO_NAME):$(tag).$(BUILD_TAG);)
+	${INFO} "Tagging complete"
+
+login:
+	${INFO} "Loggin into Docker registry..."
+	@ docker login -u $$DOCKER_USER -p $$DOCKER_PASSWORD $(DOCKER_REGISTRY_AUTH)
+	$(INFO) "Logged in"
+
+logout:
+	$(INFO) "Logging out"
+	@ docker logout
+	$(INFO) "Logged out"
+
+publish:
+	${INFO} "Publishing release images $(IMAGE_ID) to $(DOCKER_REGISTRY)/$(ORG_NAME)/$(REPO_NAME)..."
+	@ $(foreach tag, $(shell echo $(REPO_EXPR)), docker push $(tag);)
+	$(INFO) "Publish complete"
+
+
 #Use it with caution
 #This will destroy all the volumes containers and images in your local system
 deep-clean:
@@ -101,3 +143,29 @@ INFO := @bash -c '\
   printf $(LIGHT_YELLOW); \
 	echo "=> $$1"; \
 	printf $(NO_COLOR)' VALUE
+
+ifeq ($(DOCKER_REGISTRY),docker.io)
+  REPO_FILTER := $(ORG_NAME)/$(REPO_NAME)[^[:space:]|\$$]*
+else
+  REPO_FILTER := $(DOCKER_REGISTRY)/$(ORG_NAME)[^[:space:]|\$$]*
+endif
+
+REPO_EXPR := $$(docker inspect -f '{{range .RepoTags}}{{.}} {{end}}' $(IMAGE_ID) | grep -oh "$(REPO_FILTER)" | xargs)
+
+#Build tags
+ifeq (buildtag,$(firstword $(MAKECMDGOALS)))
+	BUILDTAG_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  ifeq ($(BUILDTAG_ARGS),)
+  	$(error you must specify a tag)
+  endif
+  $(eval $(BUILDTAG_ARGS):;@:)
+endif
+
+#tags
+ifeq (tag,$(firstword $(MAKECMDGOALS)))
+  TAG_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  ifeq ($(TAG_ARGS),)
+    $(error you must specify a tag)
+  endif
+  $(eval $(TAG_ARGS):;@:)
+endif
