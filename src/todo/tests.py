@@ -61,7 +61,7 @@ class TestPatchTodoItem(APITestCase):
         self.assertEqual(self.response.status_code, status.HTTP_200_OK)
 
     def test_item_was_updated_using_patch(self):
-        self.assertEqual(TodoItem.objects.get().completed, False)
+        self.assertEqual(TodoItem.objects.get().completed, True)
 
 class TestDeleteTodoItem(APITestCase):
     """
