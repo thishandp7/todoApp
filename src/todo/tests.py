@@ -41,7 +41,7 @@ class TestUpdateTodoItem(APITestCase):
         self.response = self.client.put(url, data, format='json')
 
     def test_received_200_status_code_for_created_item(self):
-        self.assertEqual(self.response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.response.status_code, status.HTTP_201_CREATED)
 
     def test_item_was_updated(self):
         self.assertEqual(TodoItem.objects.get().completed, True)
