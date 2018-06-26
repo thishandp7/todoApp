@@ -25,9 +25,7 @@ services:
       - "--die-on-term"
 
   nginx:
-    build:
-      context: .
-      dockerfile: Dockerfile.nginx
+    image: thishandp7/todoapp-nginx
     depends_on:
       - app
     volumes:

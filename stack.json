@@ -4,7 +4,7 @@
     "Parameters": {
       "VpcId": {
           "Description": "The target VPC Id",
-          "Type": "AWS::EC2::VPC:Id"
+          "Type": "AWS::EC2::VPC::Id"
       },
       "SubnetId": {
           "Description": "The target subnet Id in Availability Zone",
@@ -18,13 +18,14 @@
           "Description": "The desired number of application instances",
           "Type": "Number"
       },
-      "DbSubnts": {
+      "DbSubnets": {
           "Description": "The target DB subnet group subnet Ids",
           "Type": "List<AWS::EC2::Subnet::Id>"
       },
       "DbAvailabilityZone": {
           "Description": "The target availability zone for the db instance",
-          "Type": "String"
+          "Type": "String",
+          "Default": "us-east-1e"
       },
       "DbUsername": {
           "Description": "The database username",
@@ -33,7 +34,8 @@
       "DbPassword": {
           "Description": "The database password",
           "Type": "String",
-          "NoEcho": "true"
+          "NoEcho": "true",
+          "Default": "password"
       }
     },
     "Resources": {
@@ -41,8 +43,8 @@
           "Type" : "AWS::AutoScaling::AutoScalingGroup",
           "Properties" : {
               "LaunchConfigurationName" : { "Ref": "AutoScalingLaunchConfiguration" },
-              "MaxSize" : 0,
-              "MinSize" : 2,
+              "MinSize" : 0,
+              "MaxSize" : 2,
               "DesiredCapacity": { "Ref": "InstanceCount" },
               "VPCZoneIdentifier" :  [ { "Ref": "SubnetId" } ],
               "Tags" : [
@@ -67,7 +69,7 @@
                       {   "Fn::Join": [
                               "",
                               [
-                                  "#!/bin/bash -ex",
+                                  "#!/bin/bash -ex\n",
                                   "echo ECS_CLUSTER=", { "Ref": "EcsCluster" }, " >> /etc/ecs/ecs.config\n"
                               ]
 
@@ -85,7 +87,6 @@
               "IpProtocol" : "tcp",
               "FromPort" : "8000",
               "ToPort" : "8000",
-              "CidrIp" : "0.0.0.0/0",
               "SourceSecurityGroupId": { "Ref": "ElbSecurityGroup" }
             },
             {
@@ -124,7 +125,7 @@
                 }
               ]
              },
-            "Path": "",
+            "Path": "/",
             "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"]
          }
       },
@@ -144,7 +145,7 @@
           "StorageType": "gp2",
           "Tags": [ {
               "Key": "Name",
-              "Value": {"Fn::Join" : ["",[ { "Ref": "AWS:StackName" }, "-db" ] ]}
+              "Value": {"Fn::Join" : ["",[ { "Ref": "AWS::StackName" }, "-db" ] ]}
             } ],
           "VPCSecurityGroups": [ { "Ref": "DbSecurityGroup" } ]
         }
@@ -168,7 +169,7 @@
          "Type": "AWS::RDS::DBSubnetGroup",
          "Properties": {
             "DBSubnetGroupDescription": "Todobackend DB Subnet Group",
-            "SubnetIds": [ { "Ref": "DbSubnts" } ],
+            "SubnetIds": { "Ref": "DbSubnets" },
             "Tags": [
               {
                 "Key": "Name",
@@ -234,7 +235,7 @@
           "ContainerDefinitions": [
             {
               "Name": "todobackend",
-              "Images": "thishandp7/todoApp",
+              "Image": "thishandp7/todoapp",
               "Memory": 450,
               "Environment": [
                 {
@@ -271,7 +272,7 @@
             },
             {
               "Name": "nginx",
-              "Image": "thishandp7/todoApp-nginx",
+              "Image": "thishandp7/todoapp-nginx",
               "Memory": 300,
               "PortMappings":[
                 {
@@ -301,7 +302,7 @@
           "ContainerDefinitions": [
             {
               "Name": "todobackend",
-              "Image": "thishandp7/todoApp",
+              "Image": "thishandp7/todoapp",
               "Memory": 245,
               "Environment": [
                 {
@@ -340,8 +341,8 @@
       "TodobackendService": {
         "Type": "AWS::ECS::Service",
         "Properties": {
-          "TaseDefinition": { "Ref": "TodobackendTaskDefinition" },
           "Cluster": { "Ref": "EcsCluster" },
+          "TaskDefinition": { "Ref": "TodobackendTaskDefinition" },
           "LoadBalancers": [
             {
               "ContainerName": "nginx",
@@ -376,6 +377,25 @@
       }
     },
     "Outputs": {
-
+      "ElbDomainName" : {
+        "Description": "Public DNS name of Elastic Load Balancer",
+        "Value" : { "Fn::GetAtt" : [ "ElasticLoadBalancer", "DNSName" ]}
+      },
+      "EcsCluster" : {
+        "Description": "ARN of Todobackend Ecs Cluster",
+        "Value" : { "Ref": "EcsCluster" }
+      },
+      "TodobackendTaskDefinition" : {
+        "Description": "ARN of Todobackend Task Definition",
+        "Value" : { "Ref": "TodobackendTaskDefinition" }
+      },
+      "TodobackendAdhocTaskDefinition" : {
+        "Description": "ARN of the Todobackend Adhoc Task Definition",
+        "Value" : { "Ref": "TodobackendAdhocTaskDefinition" }
+      },
+      "TodobackendService" : {
+        "Description": "ARN of Todobackend Service",
+        "Value" : { "Ref": "TodobackendService" }
+      }
     }
 }
