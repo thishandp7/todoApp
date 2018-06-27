@@ -42,11 +42,11 @@
       "AutoScalingGroup" : {
           "Type" : "AWS::AutoScaling::AutoScalingGroup",
           "Properties" : {
+              "VPCZoneIdentifier" :  [ { "Ref": "SubnetId" } ],
               "LaunchConfigurationName" : { "Ref": "AutoScalingLaunchConfiguration" },
               "MinSize" : 0,
               "MaxSize" : 2,
               "DesiredCapacity": { "Ref": "InstanceCount" },
-              "VPCZoneIdentifier" :  [ { "Ref": "SubnetId" } ],
               "Tags" : [
                 {
                   "Key" : "Name",
@@ -59,10 +59,10 @@
       "AutoScalingLaunchConfiguration": {
           "Type" : "AWS::AutoScaling::LaunchConfiguration",
           "Properties" : {
-              "IamInstanceProfile" : { "Ref": "EC2InstanceProfile" },
               "ImageId" : "ami-5253c32d",
               "InstanceType" : "t2.micro",
               "KeyName" : { "Ref": "KeyPair" },
+              "IamInstanceProfile" : { "Ref": "EC2InstanceProfile" },
               "SecurityGroups" : [ { "Ref": "EC2InstanceSecurityGroup" } ],
               "UserData" : {
                   "Fn::Base64":
@@ -82,6 +82,7 @@
         "Type" : "AWS::EC2::SecurityGroup",
         "Properties" : {
           "GroupDescription" : "todobackend-sg",
+          "VpcId" : { "Ref": "VpcId" },
           "SecurityGroupIngress" : [
             {
               "IpProtocol" : "tcp",
@@ -96,7 +97,6 @@
               "CidrIp" : "0.0.0.0/0"
             }
           ],
-          "VpcId" : { "Ref": "VpcId" },
           "Tags" :  [
             {
               "Key": "Name",
@@ -132,28 +132,29 @@
       "DbInstance": {
         "Type": "AWS::RDS::DBInstance",
         "Properties": {
-          "AllocatedStorage": 8,
-          "DBInstanceClass": "db.t2.micro",
-          "AvailabilityZone": { "Ref": "DbAvailabilityZone" },
-          "DBName": "todobackend",
           "DBSubnetGroupName": { "Ref": "DbSubnetGroup" },
+          "MultiAZ": "false",
+          "AvailabilityZone": { "Ref": "DbAvailabilityZone" },
+          "AllocatedStorage": 8,
+          "StorageType": "gp2",
+          "DBInstanceClass": "db.t2.micro",
+          "DBName": "todobackend",
           "Engine": "MySQL",
           "EngineVersion": "5.6",
           "MasterUsername": { "Ref": "DbUsername" },
           "MasterUserPassword": { "Ref": "DbPassword" },
-          "MultiAZ": "false",
-          "StorageType": "gp2",
+          "VPCSecurityGroups": [ { "Ref": "DbSecurityGroup" } ],
           "Tags": [ {
               "Key": "Name",
               "Value": {"Fn::Join" : ["",[ { "Ref": "AWS::StackName" }, "-db" ] ]}
-            } ],
-          "VPCSecurityGroups": [ { "Ref": "DbSecurityGroup" } ]
+            } ]
         }
       },
       "DbSecurityGroup" : {
         "Type" : "AWS::EC2::SecurityGroup",
         "Properties" : {
           "GroupDescription" : "Todobackend DB Security Group",
+          "VpcId" : { "Ref": "VpcId" },
           "SecurityGroupIngress" : [
             {
               "IpProtocol" : "tcp",
@@ -161,8 +162,7 @@
               "ToPort" : "3306",
               "SourceSecurityGroupId": { "Ref": "EC2InstanceSecurityGroup" }
             }
-          ],
-          "VpcId" : { "Ref": "VpcId" }
+          ]
         }
       },
       "DbSubnetGroup": {
@@ -191,7 +191,7 @@
               }
             ],
             "HealthCheck": {
-              "Target": "HTTP:8000/todo",
+              "Target": "HTTP:8000/todos",
               "HealthyThreshold": "2",
               "UnhealthyThreshold": "10",
               "Interval": "30",
@@ -210,6 +210,7 @@
         "Type" : "AWS::EC2::SecurityGroup",
         "Properties" : {
           "GroupDescription" : "Todobackend ELB Security Group",
+          "VpcId" : { "Ref": "VpcId" },
           "SecurityGroupIngress" : [
             {
               "IpProtocol" : "tcp",
@@ -218,11 +219,11 @@
               "CidrIp" : "0.0.0.0/0"
             }
           ],
-          "VpcId" : { "Ref": "VpcId" },
           "Tags" :  [
-            {
-              "Key": "Name",
-              "Value":  {"Fn::Join" : ["",[ { "Ref": "AWS::StackName" }, "-elb-sg" ] ]} }
+              {
+                "Key": "Name",
+                "Value":  {"Fn::Join" : ["",[ { "Ref": "AWS::StackName" }, "-elb-sg" ] ]}
+              }
             ]
         }
       },
@@ -243,7 +244,7 @@
                   "Value": "todobackend.settings.release",
                 },
                 {
-                  "Name": "MYSQL",
+                  "Name": "MYSQL_HOST",
                   "Value": { "Fn::GetAtt" : [ "DbInstance", "Endpoint.Address" ]}
                 },
                 {
@@ -310,7 +311,7 @@
                   "Value": "todobackend.settings.release",
                 },
                 {
-                  "Name": "MYSQL",
+                  "Name": "MYSQL_HOST",
                   "Value": { "Fn::GetAtt" : [ "DbInstance", "Endpoint.Address" ]}
                 },
                 {
